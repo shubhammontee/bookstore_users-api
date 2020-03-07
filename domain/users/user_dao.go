@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/suvamsingh/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/suvamsingh/bookstore_users-api/utils/date_utils"
@@ -9,7 +10,8 @@ import (
 )
 
 const (
-	queryInsertUser = "INSERT INTO users(first_name,last_name,email,created_date) VALUES(?,?,?,?);"
+	indexUniqueEmail = "email_UNIQUE"
+	queryInsertUser  = "INSERT INTO users(first_name,last_name,email,created_date) VALUES(?,?,?,?);"
 )
 
 var (
@@ -49,6 +51,10 @@ func (user *User) Save() *errors.RestErr {
 	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, user.CreatedDate)
 
 	if err != nil {
+		if strings.Contains(err.Error(), indexUniqueEmail) {
+			return errors.NewBadRequestError(fmt.Sprintf("email %s already exists ", user.Email))
+		}
+
 		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user : %s", err.Error()))
 	}
 	userID, err := insertResult.LastInsertId()
