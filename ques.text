@@ -1,0 +1,43 @@
+In a binary tree,when a leaf node is infected, in one unit time all the neighbouring nodes of it will be infected and in next unit time all the neighbouring nodes of the infected nodes will be infected.  
+Given a tree and a node which will be infected first, find the unit time taken for infection to spread to All nodes in the tree.
+
+Sample Binary tree 
+		   4
+		  / \                        
+		 5   6
+		/ \ / \
+		7 8 9 10
+		   \ \
+		   13 11
+			 \  
+			  12
+	
+Sample input: 
+9
+Output:	
+6
+
+explanation:
+Assume the source leaf node : 9
+At 1 sec : 6 and 11 will be infected
+At 2 sec : 10 and 4 will be infected
+At 3 sec : 5 will be infected
+At 4 sec : 7 and 8 will be infected
+At 5 sec : 13 will be infected
+At 6 sec : 12 will be infected
+
+-------------------------------------------------------
+
+Given an array of Houses,  Each house will have ‘E’ energy or ‘C’ coins where   0< E< 100000, and 0<C  <100000. You will be at first house with ‘I’ energy. You can take either coins are energy from each house. You move from one house to other in order, and you cannot skip any house. You will lose 1 energy for each move. Find the maximum possible Coins you can collect when you stop. You will be stopping once your energy becomes 0 or you reach last house.
+
+Sample Input:
+ 5			//Number of Houses
+1 5 3 3 1		//Energy in Each house
+3 23 9 2 2		//Coins in Each house
+1			//Initial Energy
+
+Expected Output:
+32
+
+Explanation: 
+Best way to get maximum coins will be take energy from first house then coins in house 2 and 3 and stop at house 3 as no energy left. 
