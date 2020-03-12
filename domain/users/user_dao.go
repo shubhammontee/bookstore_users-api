@@ -7,6 +7,7 @@ import (
 	"github.com/suvamsingh/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/suvamsingh/bookstore_users-api/utils/date_utils"
 	"github.com/suvamsingh/bookstore_users-api/utils/errors"
+	"github.com/suvamsingh/bookstore_users-api/utils/mysql_utils"
 )
 
 const (
@@ -79,3 +80,76 @@ func (user *User) Save() *errors.RestErr {
 
 	return nil
 }
+
+//now as we can see we are checking nested error by strings.contains
+//so for that we can use the a cool interface
+//we have MYSqlError which implements this interface
+//as mysql error gives an error number we will be using this number
+//we can check this by printing the sql erroe in above Save function
+
+//The struct is
+// type MYSqlError struct{
+// 	Number uint16
+// 	Message string
+// }
+
+//SaveUsingMysqlErrorNumber ...
+func (user *User) SaveUsingMysqlErrorNumber() *errors.RestErr {
+	stmt, err := users_db.Client.Prepare(queryInsertUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
+	}
+	defer stmt.Close()
+	user.CreatedDate = date_utils.GetNowString()
+	insertResult, saveErr := stmt.Exec(user.FirstName, user.LastName, user.Email, user.CreatedDate)
+
+	if saveErr != nil {
+
+		return mysql_utils.ParseError(saveErr)
+
+		// //now here we are saying if saveErr than attemp to convert it to MySQLError
+		// sqlErr, ok := saveErr.(*mysql.MySQLError)
+		// if !ok {
+		// 	//means this saveErr is not type of MySQlError
+		// 	return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user : %s", err.Error()))
+		//we will throw internal server erroe as we dont any other way of handling this error
+	}
+
+	userID, err := insertResult.LastInsertId()
+
+	if err != nil {
+		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user : %s", err.Error()))
+	}
+
+	user.ID = userID
+	return nil
+
+}
+
+//so in the above method what we are saying is if you dont have MySQLError number
+//return internel server error
+//and if you have the MySQLError number than return error based on that no
+
+//similarly for Get method
+
+//GetUsingMysqlErrorNumber ...
+func (user *User) GetUsingMysqlErrorNumber() *errors.RestErr {
+	stmt, err := users_db.Client.Prepare(queryGetUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
+	}
+	defer stmt.Close()
+
+	//QueryRow as we only need one row from database
+	result := stmt.QueryRow(user.ID)
+
+	if getErr := result.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedDate); getErr != nil {
+		mysql_utils.ParseError(getErr)
+	}
+	return nil
+
+}
+
+//but in our get the getErr cannnot be converted to MySQLError so here
+//we don get any error number returned in getErr we can print and see that
+//so we cannot use MySQLError.Number to Handle error
