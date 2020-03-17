@@ -6,6 +6,11 @@ import (
 	"github.com/suvamsingh/bookstore_users-api/utils/errors"
 )
 
+const (
+	//StatusActive status of the user is active
+	StatusActive = "active"
+)
+
 type (
 	//User ...
 	User struct {
@@ -14,6 +19,9 @@ type (
 		LastName    string `json:"last_name,omitempty"`
 		Email       string `json:"email,omitempty"`
 		CreatedDate string `json:"created_date,omitempty"`
+		Status      string `json:"status,omitempty"`
+		Password    string `json:"password,omitempty"` //we do _ because we dont want
+		//to make json with password we will see it in our code later
 	}
 )
 
@@ -35,6 +43,11 @@ func (user *User) Validate() *errors.RestErr {
 	user.Email = strings.TrimSpace(strings.ToLower(user.Email))
 	if user.Email == "" {
 		return errors.NewBadRequestError("Invalid Email Address")
+	}
+
+	user.Password = strings.TrimSpace(user.Password)
+	if user.Password == "" {
+		return errors.NewBadRequestError("Invalid Password")
 	}
 	return nil
 }

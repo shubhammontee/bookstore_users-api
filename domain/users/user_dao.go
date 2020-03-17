@@ -11,16 +11,67 @@ import (
 )
 
 const (
-	errorNowRows     = "no rows in result set"
-	indexUniqueEmail = "email_UNIQUE"
-	queryInsertUser  = "INSERT INTO users(first_name,last_name,email,created_date) VALUES(?,?,?,?);"
-	queryGetUser     = "SELECT id,first_name,last_name,email,created_date FROM users WHERE id=?"
-	queryUpdateUser  = "UPDATE users SET first_name=?,last_name=?,email=? WHERE id=?"
+	errorNowRows          = "no rows in result set"
+	indexUniqueEmail      = "email_UNIQUE"
+	queryInsertUser       = "INSERT INTO users(first_name,last_name,email,created_date,status,password) VALUES(?,?,?,?,?,?);"
+	queryGetUser          = "SELECT id,first_name,last_name,email,created_date,status FROM users WHERE id=?;"
+	queryUpdateUser       = "UPDATE users SET first_name=?,last_name=?,email=? WHERE id=?;"
+	queryDeleteUser       = "DELETE from users WHERE id=?;"
+	queryFindUserByStatus = "SELECT id,first_name,last_name,email,date_created,status FROM users WHERE status=?;"
 )
 
 // var (
 // 	userDB = make(map[int64]*User)
 // )
+
+//FindByStatus ...
+func (user *User) FindByStatus(status string) ([]User, *errors.RestErr) {
+	stmt, err := users_db.Client.Prepare(queryFindUserByStatus)
+	if err != nil {
+		return nil, errors.NewInternalServerError(err.Error())
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(status)
+	if err != nil {
+		return nil, errors.NewInternalServerError(err.Error())
+	}
+	//if we dont do close we will live open connection to database
+	//and we will run out of connection very very fast
+	defer rows.Close()
+
+	results := make([]User, 0)
+
+	for rows.Next() {
+		var user User
+		//we need to pass yhe pointer to the scan function or else we will be
+		//passing the cpy of user and the user variable above wont get populated
+		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedDate, &user.Status); err != nil {
+			return nil, mysql_utils.ParseError(err)
+		}
+		if len(results) == 0 {
+			return nil, errors.NewNotFoundError(fmt.Sprintf("no user matching the status %s", status))
+		}
+		results = append(results, user)
+	}
+
+	return results, nil
+}
+
+//Delete ...
+func (user *User) Delete() *errors.RestErr {
+	stmt, err := users_db.Client.Prepare(queryDeleteUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(user.ID)
+	if err != nil {
+		return mysql_utils.ParseError(err)
+	}
+
+	return nil
+}
 
 //Update ...
 func (user *User) Update() *errors.RestErr {
@@ -47,7 +98,7 @@ func (user *User) Get() *errors.RestErr {
 	//QueryRow as we only need one row from database
 	result := stmt.QueryRow(user.ID)
 
-	if err := result.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedDate); err != nil {
+	if err := result.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedDate, &user.Status); err != nil {
 		if strings.Contains(err.Error(), errorNowRows) {
 			return errors.NewNotFoundError(fmt.Sprintf("user %d not found", user.ID))
 		}
@@ -66,8 +117,9 @@ func (user *User) Save() *errors.RestErr {
 	//we need to close it because we will have a connection for creating the statement with us
 	//golang will have to do for us
 	defer stmt.Close()
-	user.CreatedDate = date_utils.GetNowString()
-	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, user.CreatedDate)
+	//user.CreatedDate = date_utils.GetNowString()
+
+	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, user.CreatedDate, user.Status, user.Password)
 
 	if err != nil {
 		if strings.Contains(err.Error(), indexUniqueEmail) {
