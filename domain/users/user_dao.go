@@ -15,11 +15,26 @@ const (
 	indexUniqueEmail = "email_UNIQUE"
 	queryInsertUser  = "INSERT INTO users(first_name,last_name,email,created_date) VALUES(?,?,?,?);"
 	queryGetUser     = "SELECT id,first_name,last_name,email,created_date FROM users WHERE id=?"
+	queryUpdateUser  = "UPDATE users SET first_name=?,last_name=?,email=? WHERE id=?"
 )
 
 // var (
 // 	userDB = make(map[int64]*User)
 // )
+
+//Update ...
+func (user *User) Update() *errors.RestErr {
+	stmt, err := users_db.Client.Prepare(queryUpdateUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(user.FirstName, user.LastName, user.Email, user.ID)
+	if err != nil {
+		return mysql_utils.ParseError(err)
+	}
+	return nil
+}
 
 //Get ...
 func (user *User) Get() *errors.RestErr {
