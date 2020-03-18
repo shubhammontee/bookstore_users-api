@@ -25,6 +25,11 @@ type (
 	}
 )
 
+type (
+	//Users which we will use for marshalling in or public or private request
+	Users []User
+)
+
 // //Validate ...
 // func Validate(user *User) *errors.RestErr {
 // 	user.Email = strings.TrimSpace(strings.ToLower(user.Email))
