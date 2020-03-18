@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/suvamsingh/bookstore_users-api/datasources/mysql/users_db"
+	"github.com/suvamsingh/bookstore_users-api/logger"
 	"github.com/suvamsingh/bookstore_users-api/utils/date_utils"
 	"github.com/suvamsingh/bookstore_users-api/utils/errors"
 	"github.com/suvamsingh/bookstore_users-api/utils/mysql_utils"
@@ -91,7 +92,8 @@ func (user *User) Update() *errors.RestErr {
 func (user *User) Get() *errors.RestErr {
 	stmt, err := users_db.Client.Prepare(queryGetUser)
 	if err != nil {
-		return errors.NewInternalServerError(err.Error())
+		logger.Error("error when trying to prepare get user statement", err)
+		return errors.NewInternalServerError("Database Error")
 	}
 	defer stmt.Close()
 
@@ -203,7 +205,10 @@ func (user *User) SaveUsingMysqlErrorNumber() *errors.RestErr {
 func (user *User) GetUsingMysqlErrorNumber() *errors.RestErr {
 	stmt, err := users_db.Client.Prepare(queryGetUser)
 	if err != nil {
-		return errors.NewInternalServerError(err.Error())
+		//using logger
+		logger.Error("error when trying to prepare get user statement", err)
+		return errors.NewInternalServerError("Database Error")
+		//return errors.NewInternalServerError(err.Error())
 	}
 	defer stmt.Close()
 
@@ -211,7 +216,10 @@ func (user *User) GetUsingMysqlErrorNumber() *errors.RestErr {
 	result := stmt.QueryRow(user.ID)
 
 	if getErr := result.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.CreatedDate); getErr != nil {
-		mysql_utils.ParseError(getErr)
+		//mysql_utils.ParseError(getErr)
+		//using logger
+		logger.Error("error when trying to get user by id", err)
+		return errors.NewInternalServerError("Database Error")
 	}
 	return nil
 

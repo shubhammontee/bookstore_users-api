@@ -1,6 +1,9 @@
 package errors
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+)
 
 type (
 	//RestErr ...
@@ -10,6 +13,11 @@ type (
 		Error   string `json:"error,omitempty"`
 	}
 )
+
+//NewError ...
+func NewError(msg string) error {
+	return errors.New(msg)
+}
 
 //NewBadRequestError ...
 func NewBadRequestError(message string) *RestErr {
